@@ -40,7 +40,7 @@ macro "Multiple Acquisitions Action Tool - C333D2fD3fD40D4fD50D5fD60D6fD70D7fD80
 		labels=Array.copy(oldLabels);
 	}
 
-	pullCSVFiles(out, "CytoFile", true);
+	poolCSVFiles(out, "CytoFile", true);
 }
 
 //-----------------------------------------
@@ -358,7 +358,7 @@ function quantify(labels, nLabels){
 				intensity=List.getValue("RawIntDen");
 				area=List.getValue("Area");
 
-				setResult("Label", lineNb, name);
+				setResult("Label", lineNb, replace(name, "Detection_", ""));
 				setResult("X_"+labels[(j-1)*2+1], lineNb, x/pixelWidth);
 				setResult("Y_"+labels[(j-1)*2+1], lineNb, y/pixelHeight);
 				setResult("Intensity_"+labels[(j-1)*2+1], lineNb, intensity);
@@ -475,9 +475,15 @@ function exportAsFCS(labels, nLabels, out, basename){
 
 	line="Label";
 	for(j=0; j<nLabels; j++){
-		line+=", Intensity_"+labels[j*2+1];
-		line+=", Bkgd_Intensity_"+labels[j*2+1];
-		line+=", Bkgd_Corr_Intensity_"+labels[j*2+1];
+		line+=",Intensity_"+labels[j*2+1];
+		line+=",Bkgd_Intensity_"+labels[j*2+1];
+		line+=",Bkgd_Corr_Intensity_"+labels[j*2+1];
+	}
+
+	for(j=0; j<nLabels; j++){
+		for(k=0; k<nLabels; k++){
+			if(k>j) line+=",Distance_"+labels[j*2+1]+"-"+labels[k*2+1]+"_microns";
+		}
 	}
 	
 	print(f, line);
@@ -485,9 +491,15 @@ function exportAsFCS(labels, nLabels, out, basename){
 	for(i=0; i<nResults; i++){
 		line=getResultString("Label", i);
 		for(j=0; j<nLabels; j++){
-			line+=", "+round(getResult("Intensity_"+labels[j*2+1], i));
-			line+=", "+round(getResult("Bkgd_Intensity_"+labels[j*2+1], i));
-			line+=", "+round(getResult("Bkgd_Corr_Intensity_"+labels[j*2+1], i));
+			line+=","+round(getResult("Intensity_"+labels[j*2+1], i));
+			line+=","+round(getResult("Bkgd_Intensity_"+labels[j*2+1], i));
+			line+=","+round(getResult("Bkgd_Corr_Intensity_"+labels[j*2+1], i));
+		}
+
+		for(j=0; j<nLabels; j++){
+			for(k=0; k<nLabels; k++){
+				if(k>j) line+=","+getResult("Distance_"+labels[j*2+1]+"-"+labels[k*2+1]+"_microns");
+			}
 		}
 		print(f, line);
 	}
@@ -497,18 +509,19 @@ function exportAsFCS(labels, nLabels, out, basename){
 
 //-----------------------------------------
 function saveAll(dir, basename){
-	target=newArray("Gallery", "Control", "Scatter Plot Raw Intensities Label_1 vs Label_2", "Scatter Plot Bkgd corrected Intensities Label_1 vs Label_2", "Distribution distances Label_1 vs Label_2");
-	format=newArray("ZIP", "ZIP", "JPEG", "JPEG", "JPEG");
-	name=newArray("_Gallery.zip", "_Control.zip", "_Plot_Raw.jpg", "_Plot_Bkgd_corr.jpg", "_Distrib.jpg");
-
-	for(i=0; i<target.length; i++){
-		selectWindow(target[i]);
-		saveAs(format[i], dir+basename+name[i]);
+	format="ZIP";
+	
+	for(i=3; i<nImages; i++){
+		selectImage(i);
+		if(i>4) format="JPEG";
+		saveAs(format, dir+basename+"_"+getTitle());
 	}
+
+	if(roiManager("Count")>0) roiManager("Save", dir+basename+"_RoiSet.zip");
 }
 
 //-----------------------------------------
-function pullCSVFiles(dir, nameElement, hasHeader){
+function poolCSVFiles(dir, nameElement, hasHeader){
 	csv=getFileNamesContaining(dir, nameElement);
 	if(csv.length>0){
 		content=File.openAsString(dir+csv[0]);
@@ -517,7 +530,8 @@ function pullCSVFiles(dir, nameElement, hasHeader){
 			if(hasHeader) toPush=substring(toPush, indexOf(toPush, "\n"));
 			content+=toPush;
 		}
-		result=File.saveString(content, dir+"_Pulled_"+nameElement+".csv");
+		content=replace(content, "\n\n", "\n"); //To remove extra double carriage returns
+		result=File.saveString(content, dir+"_Pooled_"+nameElement+".csv");
 	}
 }
 
