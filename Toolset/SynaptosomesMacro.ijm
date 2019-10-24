@@ -1,30 +1,51 @@
-init();
+var LUTs=newArray("Green", "Magenta", "Blue");
+var nLabels=2;
+var in="";
+var out="";
+var labels=newArray();
+var basename="Analysis";
 
-nLabels=getNumber("Number of channels to analyse", 2);
-out=getDirectory("Where to save the FCS file ?");
 
-labels=GUI(nLabels);
-
-setBatchMode(true);
-normaliseImages(labels, nLabels);
-detectSpots(labels, nLabels);
-dimensions=overLayAndCutOut(labels, nLabels);
-setBatchMode("exit and display");
-
-if(dimensions[0]!=0 && dimensions[1]!=0){
-	reviewSynaptosomes(labels[labels.length-7], dimensions);
-	quantify(labels, nLabels);
-	generateControlImage(labels, nLabels);
-	run("Tile");
-	plotData(labels, nLabels);
-	exportAsFCS(labels, nLabels, out);
-}else{
-	exit("No synapsome found:\nTry adapting detection parameters");
+macro "Single Acquisition Action Tool - C555D31D3eD4eD5aD5eD6aD6eD7aD7eD8aD8eD91D9aD9eDa1Da2Da3DaaDaeDb2Db3DbeDc3DceCeeeD3fD4bD4fD5fD6fD7fD8fD95D9fDa5DafDbbDbfDcfCaaaD22D23D24D25D26D27D28D29D2aD2bD2cD2dD2eD32D33D34D35D36D37D38D39D3aD3bD3cD3dD4aD74Db6Db7Db9DbaDc2Dc4DcdDd3DdeC999D54D55D58D64D65D68D75D78D88D98Da8Dd4Dd5Dd6Dd7Dd8Dd9DdaDdbDdcDddCfffD2fD30D40D42D4dD50D52D5dD60D62D6dD70D72D7dD80D82D84D8dD90D9dDadDb5DbdDdfCcccD21D44D45D46D47D48D49D5bD6bD7bD85D8bD92D93D9bDa4DabDb1Db4Db8Dc5Dc6Dc7Dc8Dc9DcaDcbDccC777D41D51D56D57D59D61D66D67D69D71D76D77D79D81D86D87D89D96D97D99Da6Da7Da9"{
+	prepare(true);
+	process();
 }
 
+macro "Multiple Acquisitions Action Tool - C333D2fD3fD40D4fD50D5fD60D6fD70D7fD80D8fD90D93D94D9fDa0Da3Da4DafDb1Db2Db4DbfDc1Dc2DcdDd2CcccD12D35D36D37D38D39D3aD3bD41D4cD76D83D95Da5DacDb6Db7Db8Db9DbaDbbDbcDbdDbeDc0De2DedC999D23D24D25D26D27D28D29D2aD2bD2cD2dD2eD46D49D56D59D66D69D79D89D99Da2Da7DaaDabDb3Dc4Dd3Dd4Dd5Dd6Dd7Dd8Dd9DdaDdbDdcC777D31D48D4aD58D5aD68D6aD78D7aD88D8aD98D9aDc5Dc6Dc7Dc8Dc9DcaDcbDccDceCeeeD21D33D3cD3eD43D4eD51D53D5eD61D63D6eD71D73D75D7eD81D84D86D8eD91D96D9eDa6DaeDc3DdeCbbbD13D14D15D16D17D18D19D1aD1bD1cD1dD1eD1fD45D55D5cD65D6cD7cD8cD9cDa1Da8Da9Db5Dd1De3De4De5De6De7De8De9DeaDebDecC666D22D30D32D42D47D4bD52D57D5bD62D67D6bD72D77D7bD82D87D8bD92D97D9bDb0DcfDdd"{
+	run("Close All");
+	prepare(false);
+
+	channel1=getFileNamesContaining(in, labels[0]);
+
+	for(i=0; i<channel1.length; i++){
+		hasAllFiles=true;
+		oldLabels=Array.copy(labels);
+		firstLabel=labels[0];
+		
+		for(j=0; j<nLabels; j++){
+			labels[2*j]=replace(channel1[i], firstLabel, labels[2*j]);
+			hasAllFiles=hasAllFiles&&File.exists(in+labels[2*j]);
+			if(!hasAllFiles){
+				print("Missing file: "+labels[2*j]);
+				break;
+			}
+		}
+		
+		if(hasAllFiles){
+			for(j=0; j<nLabels; j++) open(in+labels[2*j]);
+			basename=replace(channel1[i], firstLabel, "_");
+			basename=substring(basename, 0, lastIndexOf(basename, "."));
+			process();
+		}
+		labels=Array.copy(oldLabels);
+	}
+
+	pullCSVFiles(out, "CytoFile", true);
+}
 
 //-----------------------------------------
 function init(){
+	run("Set Measurements...", "decimal=4");
 	close("Normalised_*");
 	close("Gallery*");
 	close("Detection*");
@@ -33,17 +54,40 @@ function init(){
 	close("Distribution*");
 	roiManager("Reset");
 	run("Clear Results");
-	run("Tile");
+	if(nImages!=0) run("Tile");
 }
 
 //-----------------------------------------
-function GUI(nLabels){
-	images=getImageList();
+function prepare(isSingle){
+	init();
+
+	nLabels=getNumber("Number of channels to analyse", nLabels);
+	if(!isSingle) in=getDirectory("Where are the input files ?");
+	out=getDirectory("Where to save the output files ?");
+
+	labels=GUI(nLabels, isSingle);
+}
+
+//-----------------------------------------
+function GUI(nLabels, isSingle){
+	availableLUTs=getList("LUTs");
+
+	if(isSingle){
+		images=getImageList();
+	}else{
+		images=newArray("G Ex 470 Em QuadA", "R Ex 550 Em QuadA", "");
+	}
+
 	Dialog.create("Colocalisation on synaptosomes");
 	Dialog.addMessage("---Images---");
 	for(i=1; i<=nLabels; i++){
-		Dialog.addChoice("Image_for_label_"+i, images, images[i-1]);
+		if(isSingle){
+			Dialog.addChoice("Image_for_label_"+i, images, images[i-1]);
+		}else{
+			Dialog.addString("FileName_contains", images[i-1]);
+		}
 		Dialog.addString("Name_for_label_"+i, "Label_"+i);
+		Dialog.addChoice("LUT_for_label_"+i, availableLUTs, LUTs[(i-1)%LUTs.length]);
 	}
 	Dialog.addMessage("---Parameters---");
 	Dialog.addNumber("Size_of_the_detection_square", 64);
@@ -55,14 +99,43 @@ function GUI(nLabels){
 	Dialog.addNumber("Pixel_size_in_microns", 0.103);
 	Dialog.show();
 
-	out=newArray(2*nLabels+7);
+	params=newArray(2*nLabels+7);
 	for(i=0; i<2*nLabels; i=i+2){
-		out[i]=Dialog.getChoice();
-		out[i+1]=Dialog.getString();
+		if(isSingle){
+			params[i]=Dialog.getChoice();
+		}else{
+			params[i]=Dialog.getString();
+		}
+		params[i+1]=Dialog.getString();
+		LUTs[i/2]=Dialog.getChoice();
 	}
-	for(i=2*nLabels; i<out.length; i++) out[i]=Dialog.getNumber();
+	for(i=2*nLabels; i<params.length; i++) params[i]=Dialog.getNumber();
 	
-	return out;
+	return params;
+}
+
+//-----------------------------------------
+function process(){
+	setBatchMode(true);
+	normaliseImages(labels, nLabels);
+	detectSpots(labels, nLabels);
+	dimensions=overLayAndCutOut(labels, nLabels);
+	setBatchMode("exit and display");
+
+	if(dimensions[0]!=0 && dimensions[1]!=0){
+		reviewSynaptosomes(labels[labels.length-7], dimensions);
+		quantify(labels, nLabels);
+		generateControlImage(labels, nLabels);
+		run("Tile");
+		plotData(labels, nLabels);
+		saveAll(out, basename);
+		exportAsFCS(labels, nLabels, out, basename);
+		saveAs("Results", out+basename+"_Results.csv");
+		run("Close All");
+		run("Clear Results");
+	}else{
+		exit("No synapsome found:\nTry adapting detection parameters");
+	}
 }
 
 //-----------------------------------------
@@ -122,6 +195,8 @@ function overLayAndCutOut(labels, nLabels){
 	run("Merge Channels...", arg+"create keep");
 	rename("Composite");
 
+	applyLUTs();
+
 	nCol=0;
 	nRows=0;
 
@@ -153,6 +228,14 @@ function overLayAndCutOut(labels, nLabels){
 	close("Detection_Stack");
 
 	return newArray(nCol, nRows);
+}
+
+//-----------------------------------------
+function applyLUTs(){
+	for(i=0; i<nLabels; i++){
+		Stack.setChannel(i+1);
+		run(LUTs[i]);
+	}
 }
 
 //-----------------------------------------
@@ -315,6 +398,7 @@ function quantify(labels, nLabels){
 function generateControlImage(labels, nLabels){
 	getDimensions(width, height, channels, slices, frames);
 	newImage("Control", "16-bit composite-mode", width, height, channels, slices, frames);
+	applyLUTs();
 	setColor("white");
 	size=labels[2*nLabels+1];
 
@@ -358,36 +442,36 @@ function plotData(labels, nLabels){
 
 //-----------------------------------------
 function getColumnResults(title){
-	out=newArray(nResults);
-	for(i=0; i<nResults; i++) out[i]=getResult(title, i);
+	col=newArray(nResults);
+	for(i=0; i<nResults; i++) col[i]=getResult(title, i);
 
-	return out;
+	return col;
 }
 
 //-----------------------------------------
 function getHistogramX(data, nBins){
 	Array.getStatistics(data, min, max, mean, stdDev);
-	out=newArray(nBins+1);
-	for(i=0; i<out.length; i++) out[i]=min+i*(max-min)/(nBins-1);
+	histo=newArray(nBins+1);
+	for(i=0; i<histo.length; i++) histo[i]=min+i*(max-min)/(nBins-1);
 
-	return out;
+	return histo;
 }
 
 //-----------------------------------------
 function getHistogramY(data, nBins){
 	Array.getStatistics(data, min, max, mean, stdDev);
-	out=newArray(nBins+1);
+	histo=newArray(nBins+1);
 	for(i=0; i<data.length; i++){
 		position=(data[i]-min)/((max-min)/(nBins-1));
-		out[position]++;
+		histo[position]++;
 	}
 
-	return out;
+	return histo;
 }
 
 //-----------------------------------------
-function exportAsFCS(labels, nLabels, out){
-	f=File.open(out+"CytoFile.txt");
+function exportAsFCS(labels, nLabels, out, basename){
+	f=File.open(out+basename+"_CytoFile.txt");
 
 	line="Label";
 	for(j=0; j<nLabels; j++){
@@ -408,7 +492,33 @@ function exportAsFCS(labels, nLabels, out){
 		print(f, line);
 	}
 	File.close(f);
-	result=File.rename(out+"CytoFile.txt", out+"CytoFile.csv");
+	result=File.rename(out+basename+"_CytoFile.txt", out+basename+"_CytoFile.csv");
+}
+
+//-----------------------------------------
+function saveAll(dir, basename){
+	target=newArray("Gallery", "Control", "Scatter Plot Raw Intensities Label_1 vs Label_2", "Scatter Plot Bkgd corrected Intensities Label_1 vs Label_2", "Distribution distances Label_1 vs Label_2");
+	format=newArray("ZIP", "ZIP", "JPEG", "JPEG", "JPEG");
+	name=newArray("_Gallery.zip", "_Control.zip", "_Plot_Raw.jpg", "_Plot_Bkgd_corr.jpg", "_Distrib.jpg");
+
+	for(i=0; i<target.length; i++){
+		selectWindow(target[i]);
+		saveAs(format[i], dir+basename+name[i]);
+	}
+}
+
+//-----------------------------------------
+function pullCSVFiles(dir, nameElement, hasHeader){
+	csv=getFileNamesContaining(dir, nameElement);
+	if(csv.length>0){
+		content=File.openAsString(dir+csv[0]);
+		for(i=1; i<csv.length; i++){
+			toPush=File.openAsString(dir+csv[i]);
+			if(hasHeader) toPush=substring(toPush, indexOf(toPush, "\n"));
+			content+=toPush;
+		}
+		result=File.saveString(content, dir+"_Pulled_"+nameElement+".csv");
+	}
 }
 
 
@@ -420,4 +530,14 @@ function getImageList(){
 		images[i]=getTitle();
 	}
 	return images;
+}
+
+//-----------------------------------------
+function getFileNamesContaining(dir, part){
+	tmp=getFileList(dir);
+	filesList=newArray(0);
+
+	for(i=0; i<tmp.length; i++) if(indexOf(tmp[i], part)!=-1) filesList=Array.concat(filesList, tmp[i]);
+
+	return filesList;
 }
