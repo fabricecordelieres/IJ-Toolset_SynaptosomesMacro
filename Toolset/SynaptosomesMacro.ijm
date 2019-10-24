@@ -1,6 +1,8 @@
 init();
 
 nLabels=getNumber("Number of channels to analyse", 2);
+out=getDirectory("Where to save the FCS file ?");
+
 labels=GUI(nLabels);
 
 setBatchMode(true);
@@ -14,12 +16,13 @@ quantify(labels, nLabels);
 generateControlImage(labels, nLabels);
 run("Tile");
 plotData(labels, nLabels);
+exportAsFCS(labels, nLabels, out);
 
 
 //-----------------------------------------
 function init(){
 	close("Normalised_*");
-	close("Galery*");
+	close("Gallery*");
 	close("Detection*");
 	close("Control*");
 	close("Scatter*");
@@ -127,7 +130,7 @@ function overLayAndCutOut(labels, nLabels){
 	nCol=floor(sqrt(roiManager("Count")));
 	nRows=round(roiManager("Count")/nCol+0.5);
 	run("Make Montage...", "columns="+nCol+" rows="+nRows+" scale=1");
-	rename("Galery");
+	rename("Gallery");
 
 	Stack.getDimensions(width, height, channels, slices, frames);
 	for(i=1; i<=channels; i++){
@@ -286,7 +289,6 @@ function quantify(labels, nLabels){
 						x2=data[(k-1)*2];
 						y2=data[(k-1)*2+1];
 
-						print(pixelSize);
 						distance=pixelSize*sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1));
 						setResult("Distance_"+labels[(j-1)*2+1]+"-"+labels[(k-1)*2+1]+"_microns", lineNb, distance);
 					}
@@ -306,8 +308,6 @@ function generateControlImage(labels, nLabels){
 	for(i=0; i<nLabels; i++){
 		Stack.setChannel(i+1);
 		x=getColumnResults("X_"+labels[i*2+1]);
-		print("X_"+labels[i*2+1]);
-		print(x.length);
 		y=getColumnResults("Y_"+labels[i*2+1]);
 		for(j=0; j<x.length; j++) drawOval(x[j]-size/2, y[j]-size/2, size, size);
 	}
@@ -370,6 +370,32 @@ function getHistogramY(data, nBins){
 	}
 
 	return out;
+}
+
+//-----------------------------------------
+function exportAsFCS(labels, nLabels, out){
+	f=File.open(out+"CytoFile.txt");
+
+	line="Label";
+	for(j=0; j<nLabels; j++){
+		line+=", Intensity_"+labels[j*2+1];
+		line+=", Bkgd_Intensity_"+labels[j*2+1];
+		line+=", Bkgd_Corr_Intensity_"+labels[j*2+1];
+	}
+	
+	print(f, line);
+
+	for(i=0; i<nResults; i++){
+		line=getResultString("Label", i);
+		for(j=0; j<nLabels; j++){
+			line+=", "+round(getResult("Intensity_"+labels[j*2+1], i));
+			line+=", "+round(getResult("Bkgd_Intensity_"+labels[j*2+1], i));
+			line+=", "+round(getResult("Bkgd_Corr_Intensity_"+labels[j*2+1], i));
+		}
+		print(f, line);
+	}
+	File.close(f);
+	result=File.rename(out+"CytoFile.txt", out+"CytoFile.csv");
 }
 
 
