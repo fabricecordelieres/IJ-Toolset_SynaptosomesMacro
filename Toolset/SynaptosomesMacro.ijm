@@ -117,9 +117,11 @@ function GUI(nLabels, isSingle){
 //-----------------------------------------
 function process(){
 	setBatchMode(true);
+
+	reduce(labels, nLabels);
 	normaliseImages(labels, nLabels);
 	detectSpots(labels, nLabels);
-	dimensions=overLayAndCutOut(labels, nLabels);
+	dimensions=overlayAndCutOut(labels, nLabels);
 	setBatchMode("exit and display");
 
 	if(dimensions[0]!=0 && dimensions[1]!=0){
@@ -135,6 +137,21 @@ function process(){
 		run("Clear Results");
 	}else{
 		exit("No synapsome found:\nTry adapting detection parameters");
+	}
+}
+
+//-----------------------------------------
+function reduce(labels, nLabels){
+	for(i=0; i<2*nLabels; i=i+2){
+		selectWindow(labels[i]);
+		getDimensions(width, height, channels, slices, frames);
+		if(slices>1){
+			run("Z Project...", "projection=[Sum Slices]");
+			rename("Proj");
+			close(labels[i]);
+			selectWindow("Proj");
+			rename(labels[i]);
+		}
 	}
 }
 
@@ -188,7 +205,7 @@ function detectSpots(labels, nLabels){
 }
 
 //-----------------------------------------
-function overLayAndCutOut(labels, nLabels){
+function overlayAndCutOut(labels, nLabels){
 	arg="";
 	for(i=0; i<nLabels; i++) arg+="c"+(i+1)+"=["+labels[2*i]+"] ";
 	
