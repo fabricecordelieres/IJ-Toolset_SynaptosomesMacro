@@ -11,12 +11,16 @@ detectSpots(labels, nLabels);
 dimensions=overLayAndCutOut(labels, nLabels);
 setBatchMode("exit and display");
 
-reviewSynaptosomes(labels[labels.length-7], dimensions);
-quantify(labels, nLabels);
-generateControlImage(labels, nLabels);
-run("Tile");
-plotData(labels, nLabels);
-exportAsFCS(labels, nLabels, out);
+if(dimensions[0]!=0 && dimensions[1]!=0){
+	reviewSynaptosomes(labels[labels.length-7], dimensions);
+	quantify(labels, nLabels);
+	generateControlImage(labels, nLabels);
+	run("Tile");
+	plotData(labels, nLabels);
+	exportAsFCS(labels, nLabels, out);
+}else{
+	exit("No synapsome found:\nTry adapting detection parameters");
+}
 
 
 //-----------------------------------------
@@ -45,8 +49,8 @@ function GUI(nLabels){
 	Dialog.addNumber("Size_of_the_detection_square", 64);
 	Dialog.addNumber("Radius_for_spots_filtering", 3);
 	Dialog.addNumber("Noise_tolerance_for_spots_detection", 3);
-	Dialog.addNumber("Min_size_for_spots", 5);
-	Dialog.addNumber("Max_size_for_spots", 100);
+	Dialog.addNumber("Min_size_for_spots_(pixels)", 5);
+	Dialog.addNumber("Max_size_for_spots_(pixels)", 100);
 	Dialog.addNumber("Size_of_the_quantification_circle_square", 32);
 	Dialog.addNumber("Pixel_size_in_microns", 0.103);
 	Dialog.show();
@@ -96,9 +100,11 @@ function detectSpots(labels, nLabels){
 	Roi.getCoordinates(xpoints, ypoints);
 	roiManager("Reset");
 	index=1;
+
 	for(i=0; i<xpoints.length; i++){
 		doWand(xpoints[i], ypoints[i], noise, "Legacy");
-		getStatistics(area);
+		getRawStatistics(area);
+		
 		if(area>min && area<max){
 			makeRectangle(xpoints[i]-size/2, ypoints[i]-size/2, size, size);
 			Roi.setName("Detection_"+(index++));
@@ -116,28 +122,33 @@ function overLayAndCutOut(labels, nLabels){
 	run("Merge Channels...", arg+"create keep");
 	rename("Composite");
 
-	for(i=0; i<roiManager("Count"); i++){
-		selectWindow("Composite");
-		roiManager("Select", i);
-		run("Duplicate...", "title=Detection_"+(i+1)+" duplicate");
-		if(i==0){
-			rename("Detection_Stack");
-		}else{
-			run("Concatenate...", "  title=[Detection_Stack] image1=Detection_Stack image2=Detection_"+(i+1)+" image3=[-- None --]");
+	nCol=0;
+	nRows=0;
+
+	if(roiManager("Count")!=0){
+		for(i=0; i<roiManager("Count"); i++){
+			selectWindow("Composite");
+			roiManager("Select", i);
+			run("Duplicate...", "title=Detection_"+(i+1)+" duplicate");
+			if(i==0){
+				rename("Detection_Stack");
+			}else{
+				run("Concatenate...", "  title=[Detection_Stack] image1=Detection_Stack image2=Detection_"+(i+1)+" image3=[-- None --]");
+			}
+		}
+
+		nCol=floor(sqrt(roiManager("Count")));
+		nRows=round(roiManager("Count")/nCol+0.5);
+		run("Make Montage...", "columns="+nCol+" rows="+nRows+" scale=1");
+		rename("Gallery");
+
+		Stack.getDimensions(width, height, channels, slices, frames);
+		for(i=1; i<=channels; i++){
+			Stack.setChannel(i);
+			run("Enhance Contrast", "saturated=0.35");
 		}
 	}
 
-	nCol=floor(sqrt(roiManager("Count")));
-	nRows=round(roiManager("Count")/nCol+0.5);
-	run("Make Montage...", "columns="+nCol+" rows="+nRows+" scale=1");
-	rename("Gallery");
-
-	Stack.getDimensions(width, height, channels, slices, frames);
-	for(i=1; i<=channels; i++){
-		Stack.setChannel(i);
-		run("Enhance Contrast", "saturated=0.35");
-	}
-	
 	close("Composite");
 	close("Detection_Stack");
 
@@ -251,6 +262,8 @@ function quantify(labels, nLabels){
 			data=newArray(channels*2);
 			index=0;
 			
+			getPixelSize(unit, pixelWidth, pixelHeight);
+
 			//Get raw data
 			for(j=1; j<=channels; j++){
 				Stack.setChannel(j);
@@ -263,14 +276,14 @@ function quantify(labels, nLabels){
 				area=List.getValue("Area");
 
 				setResult("Label", lineNb, name);
-				setResult("X_"+labels[(j-1)*2+1], lineNb, x);
-				setResult("Y_"+labels[(j-1)*2+1], lineNb, y);
+				setResult("X_"+labels[(j-1)*2+1], lineNb, x/pixelWidth);
+				setResult("Y_"+labels[(j-1)*2+1], lineNb, y/pixelHeight);
 				setResult("Intensity_"+labels[(j-1)*2+1], lineNb, intensity);
 
 				data[index++]=x;
 				data[index++]=y;
 
-				run("Make Band...", "band="+(widthRoi/2-size/2-1));
+				run("Make Band...", "band="+(widthRoi/2-size/2-1)*pixelWidth);
 				List.setMeasurements;
 				intensityBkgd=List.getValue("RawIntDen");
 				areaBkgd=List.getValue("Area");
