@@ -134,3 +134,18 @@ Failed to work on 3D images:
 * Issue: when working on 3D images, a single synaptosome is processed multiple times (=number of slices).
 * Work-around: before starting the analysis, a 3D sum projection is performed on the images. As the objects are of size really far from the Z resolution, this is supposed not to impact much the results.
 
+### Version 7: 17/12/21
+**Integration of randomization plugin:**
+* Florian Levet has provided a plugin to randomize coordinates (monte-carlo simulation) to assess colocalization.
+* The toolset now calls the plugin. As a consequence, the interface includes two new parameters:
+![GUI_Randomization](images/GUI_Randomization.png)
+
+	* Monte carlo simulations: number of rounds of randomization (default: 10000).
+	* Distance max colocalization: resolution of the optical system below which objects are not
+distinguishable (default: 0.271µm, which corresponds to 63x/1.4 objective, in widefield).
+* A new output is generated and saved, Analysis_RandomizationResults.csv, which contains
+random colocalization of channel A over B and B over A, expressed as %.
+* The macro needs the RandomizationPlugin.class to be installed: drag-and-drop the file to
+Fiji/ImageJ toolbar then pressed Ok to save it in the Fiji/Plugins folder.
+* The distance calibration issue has been corrected: distances should now be expressed in
+microns.
