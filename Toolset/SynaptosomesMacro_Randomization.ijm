@@ -138,9 +138,11 @@ function process(){
 		saveAs("Results", out+basename+"_Results.csv");
 
 		open(out+basename+"_Results.csv");
-		while(getInfo("window.title")!=basename+"_Results.csv") wait(50); //Wait until the results window is saved
+		while(getInfo("window.title")!=basename+"_Results.csv") wait(150); //Wait until the results window is saved
 		
 		run("RandomizerColocalization ", "image_width_(microns)="+imgSize[0]+" image_height_(microns)="+imgSize[1]+" distance_max_colocalization_(microns)="+labels[2*nLabels+8]+" #_monte_carlo_simulations="+labels[2*nLabels+7]+" name_of_label_1="+labels[1]+" name_of_label_2="+labels[3]);
+		while(getInfo("window.title")!="Randomizer_Results") wait(150); //Wait until the results window is saved
+		
 		selectWindow("Randomizer_Results");
 		saveAs("Results", out+basename+"_RandomizationResults.csv");
 
