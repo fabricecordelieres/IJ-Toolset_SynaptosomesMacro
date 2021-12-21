@@ -149,3 +149,8 @@ random colocalization of channel A over B and B over A, expressed as %.
 Fiji/ImageJ toolbar then pressed Ok to save it in the Fiji/Plugins folder.
 * The distance calibration issue has been corrected: distances should now be expressed in
 microns.
+
+### Version 8: 21/12/21
+**Bug correction:**
+* On some machines, it seems the saving of results table/analysis through randomization may take a time that Fiji is not waiting for. Fiji processes the macro while previous steps have not been performed. As a result, some data are missing and Fiji crashes.
+* Some delais have been included: checks are being performed to see if the required tables have been generated, or wait otherwise.
