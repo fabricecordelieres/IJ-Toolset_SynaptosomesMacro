@@ -138,17 +138,18 @@ function process(){
 		saveAs("Results", out+basename+"_Results.csv");
 
 		open(out+basename+"_Results.csv");
-		while(getInfo("window.title")!=basename+"_Results.csv") wait(150); //Wait until the results window is saved
+		Table.rename("Analysis_Results.csv"); //Standardize the name of the table for the randomization plugin
+		selectWindow(basename+"_Results.csv"); //Table.rename duplicates the table: close the original one
+		run("Close");
 		
 		run("RandomizerColocalization ", "image_width_(microns)="+imgSize[0]+" image_height_(microns)="+imgSize[1]+" distance_max_colocalization_(microns)="+labels[2*nLabels+8]+" #_monte_carlo_simulations="+labels[2*nLabels+7]+" name_of_label_1="+labels[1]+" name_of_label_2="+labels[3]);
-		while(getInfo("window.title")!="Randomizer_Results") wait(150); //Wait until the results window is saved
 		
 		selectWindow("Randomizer_Results");
 		saveAs("Results", out+basename+"_RandomizationResults.csv");
 
 		//Close all results windows
 		run("Close");
-		selectWindow(basename+"_Results.csv");
+		selectWindow("Analysis_Results.csv");//Close the duplciated table
 		run("Close");
 
 		run("Close All");
