@@ -155,6 +155,11 @@ microns.
 * On some machines, it seems the saving of results table/analysis through randomization may take a time that Fiji is not waiting for. Fiji processes the macro while previous steps have not been performed. As a result, some data are missing and Fiji crashes.
 * Some delais have been included: checks are being performed to see if the required tables have been generated, or wait otherwise.
 
-### Version 9: 22/01/10
+### Version 9: 10/01/22
 **Bug correction:**
 * The Randomization plugin was unable to retrieve the Analysis_Results Window. The toolset code has been modified so that the Results window is renamed according to what the plugin is expecting.
+
+### Version 10: 11/01/22
+**Bug correction:**
+* The distance between spots in the table was not updated: the first distance was copied and pasted. The problem is now solved.
+* Added the pulling of all the Randomization tables in batch mode.
