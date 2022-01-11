@@ -41,6 +41,8 @@ macro "Multiple Acquisitions Action Tool - C333D2fD3fD40D4fD50D5fD60D6fD70D7fD80
 	}
 
 	poolCSVFiles(out, "CytoFile", true);
+	poolCSVFiles(out, "RandomizationResults", true);
+
 }
 
 //-----------------------------------------
@@ -537,7 +539,7 @@ function exportAsFCS(labels, nLabels, out, basename){
 
 		for(j=0; j<nLabels; j++){
 			for(k=0; k<nLabels; k++){
-				if(k>j) line+=","+getResult("Distance_"+labels[j*2+1]+"-"+labels[k*2+1]+"_microns");
+				if(k>j) line+=","+getResult("Distance_"+labels[j*2+1]+"-"+labels[k*2+1]+"_microns", i);
 			}
 		}
 		print(f, line);
