@@ -84,6 +84,15 @@ The user is provided withn a Graphical User Interface (GUI) from where (s)he sho
 3. Under the ImageJ toolbar, on the right-most side, click on the red double arrow and select the appropriate toolset (choose "Startup macro" to go back to tthe original status).
 4. Default ImageJ tools have partly been replaced with your toolset's buttons.
 
+### Toolset ImageJ (version >=7):
+The toolset embarks randomization capability that require a plugin.
+In addition to the previous procedure, you will need to install [RandomizerColocalization](https://github.com/flevet/RandomizerColocalization).
+The sources are available from [here](https://github.com/flevet/RandomizerColocalization). A compiled version is available from [here](https://github.com/fabricecordelieres/IJ-Toolset_SynaptosomesMacro/tree/master/Plugins#:~:text=RandomizerColocalization_.class)
+1. Download [RandomizerColocalization_.class](https://github.com/fabricecordelieres/IJ-Toolset_SynaptosomesMacro/tree/master/Plugins#:~:text=RandomizerColocalization_.class).
+2. Drag-and-drop the .class file to your ImageJ/Fiji toolbar.
+3. In the File saver window, press Ok.
+4. Restart Fiji/ImageJ.
+
 ## Revisions:
 ### Version 1: 20/02/17 
 
