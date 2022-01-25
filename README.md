@@ -88,7 +88,7 @@ The user is provided withn a Graphical User Interface (GUI) from where (s)he sho
 The toolset embarks randomization capability that require a plugin.
 In addition to the previous procedure, you will need to install [RandomizerColocalization](https://github.com/flevet/RandomizerColocalization).
 The sources are available from [here](https://github.com/flevet/RandomizerColocalization). A compiled version is available from [here](https://github.com/fabricecordelieres/IJ-Toolset_SynaptosomesMacro/tree/master/Plugins#:~:text=RandomizerColocalization_.class)
-1. Download [RandomizerColocalization_.class](https://github.com/fabricecordelieres/IJ-Toolset_SynaptosomesMacro/tree/master/Plugins#:~:text=RandomizerColocalization_.class).
+1. Download [RandomizerColocalization_.class](https://github.com/fabricecordelieres/IJ-Toolset_SynaptosomesMacro/raw/master/Plugins/RandomizerColocalization_.class).
 2. Drag-and-drop the .class file to your ImageJ/Fiji toolbar.
 3. In the File saver window, press Ok.
 4. Restart Fiji/ImageJ.
