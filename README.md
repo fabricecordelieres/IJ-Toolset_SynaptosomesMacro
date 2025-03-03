@@ -172,3 +172,7 @@ microns.
 **Bug correction:**
 * The distance between spots in the table was not updated: the first distance was copied and pasted. The problem is now solved.
 * Added the pulling of all the Randomization tables in batch mode.
+ 
+### Version 11: 03/03/25
+**Bug correction:**
+* With ImageJ update v1.54p, ROIs were not displayed on the Gallery. Added action to remove z/c/t information from the ROIs and forced their display.
