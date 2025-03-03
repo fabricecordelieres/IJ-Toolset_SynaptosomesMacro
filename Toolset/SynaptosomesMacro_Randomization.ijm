@@ -309,6 +309,10 @@ function reviewSynaptosomes(size, dimensions){
 		wait(100);
 	}
 	roiManager("Deselect");
+	roiManager("Show All without labels");
+	roiManager("Remove Channel Info");
+	roiManager("Remove Slice Info");
+	roiManager("Remove Frame Info");
 }
 
 //-----------------------------------------
@@ -333,7 +337,11 @@ function generateROIs(nRois, size, dimensions){
 			}
 		}
 	}
+	roiManager("Deselect");
 	roiManager("Show All without labels");
+	roiManager("Remove Channel Info");
+	roiManager("Remove Slice Info");
+	roiManager("Remove Frame Info");
 }
 
 //-----------------------------------------
@@ -365,6 +373,11 @@ function updateRoiStatus(x, y, boxSize, dimensions){
 			roiManager("Update");
 		}
 		run("Select None");
+		roiManager("Deselect");
+		roiManager("Show All without labels");
+		roiManager("Remove Channel Info");
+		roiManager("Remove Slice Info");
+		roiManager("Remove Frame Info");
 	}
 }
 
