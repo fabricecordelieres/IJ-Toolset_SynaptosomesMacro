@@ -16,7 +16,7 @@ macro "Multiple Acquisitions Action Tool - C333D2fD3fD40D4fD50D5fD60D6fD70D7fD80
 	prepare(false);
 
 	channel1=getFileNamesContaining(in, labels[0]);
-	
+
 	for(i=0; i<channel1.length; i++){
 		hasAllFiles=true;
 		oldLabels=Array.copy(labels);
@@ -285,10 +285,6 @@ function reviewSynaptosomes(size, dimensions){
 		wait(100);
 	}
 	roiManager("Deselect");
-	roiManager("Remove Channel Info");
-	roiManager("Remove Slice Info");
-	roiManager("Remove Frame Info");
-	roiManager("Show All without labels");
 }
 
 //-----------------------------------------
@@ -313,11 +309,7 @@ function generateROIs(nRois, size, dimensions){
 			}
 		}
 	}
-	roiManager("Deselect");
 	roiManager("Show All without labels");
-	roiManager("Remove Channel Info");
-	roiManager("Remove Slice Info");
-	roiManager("Remove Frame Info");
 }
 
 //-----------------------------------------
@@ -349,11 +341,6 @@ function updateRoiStatus(x, y, boxSize, dimensions){
 			roiManager("Update");
 		}
 		run("Select None");
-		roiManager("Deselect");
-		roiManager("Show All without labels");
-		roiManager("Remove Channel Info");
-		roiManager("Remove Slice Info");
-		roiManager("Remove Frame Info");
 	}
 }
 
