@@ -41,6 +41,7 @@ macro "Multiple Acquisitions Action Tool - C333D2fD3fD40D4fD50D5fD60D6fD70D7fD80
 	}
 
 	poolCSVFiles(out, "CytoFile", true);
+
 }
 
 //-----------------------------------------
@@ -117,8 +118,7 @@ function GUI(nLabels, isSingle){
 //-----------------------------------------
 function process(){
 	setBatchMode(true);
-
-	reduce(labels, nLabels);
+	imgSize=reduce(labels, nLabels);
 	normaliseImages(labels, nLabels);
 	detectSpots(labels, nLabels);
 	dimensions=overlayAndCutOut(labels, nLabels);
@@ -132,7 +132,9 @@ function process(){
 		plotData(labels, nLabels);
 		saveAll(out, basename);
 		exportAsFCS(labels, nLabels, out, basename);
+
 		saveAs("Results", out+basename+"_Results.csv");
+
 		run("Close All");
 		run("Clear Results");
 	}else{
@@ -153,6 +155,9 @@ function reduce(labels, nLabels){
 			rename(labels[i]);
 		}
 	}
+
+	//Returns the image's size in microns
+	return newArray(width*labels[labels.length-1], height*labels[labels.length-1]);
 }
 
 //-----------------------------------------
@@ -285,6 +290,10 @@ function reviewSynaptosomes(size, dimensions){
 		wait(100);
 	}
 	roiManager("Deselect");
+	roiManager("Remove Channel Info");
+    roiManager("Remove Slice Info");
+    roiManager("Remove Frame Info");
+    roiManager("Show All without labels"); 
 }
 
 //-----------------------------------------
@@ -309,7 +318,11 @@ function generateROIs(nRois, size, dimensions){
 			}
 		}
 	}
+	roiManager("Deselect");
 	roiManager("Show All without labels");
+	roiManager("Remove Channel Info");
+	roiManager("Remove Slice Info");
+	roiManager("Remove Frame Info"); 
 }
 
 //-----------------------------------------
@@ -341,6 +354,11 @@ function updateRoiStatus(x, y, boxSize, dimensions){
 			roiManager("Update");
 		}
 		run("Select None");
+		roiManager("Deselect");
+        roiManager("Show All without labels");
+        roiManager("Remove Channel Info");
+        roiManager("Remove Slice Info");
+        roiManager("Remove Frame Info"); 
 	}
 }
 
@@ -376,8 +394,8 @@ function quantify(labels, nLabels){
 				area=List.getValue("Area");
 
 				setResult("Label", lineNb, replace(name, "Detection_", ""));
-				setResult("X_"+labels[(j-1)*2+1], lineNb, x/pixelWidth);
-				setResult("Y_"+labels[(j-1)*2+1], lineNb, y/pixelHeight);
+				setResult("X_"+labels[(j-1)*2+1]+"_microns", lineNb, x); //In units
+				setResult("Y_"+labels[(j-1)*2+1]+"_microns", lineNb, y); //In units
 				setResult("Intensity_"+labels[(j-1)*2+1], lineNb, intensity);
 
 				data[index++]=x;
@@ -402,7 +420,7 @@ function quantify(labels, nLabels){
 						x2=data[(k-1)*2];
 						y2=data[(k-1)*2+1];
 
-						distance=pixelSize*sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1));
+						distance=sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1)); //No need to calibrate as the coordinates are calibrated
 						setResult("Distance_"+labels[(j-1)*2+1]+"-"+labels[(k-1)*2+1]+"_microns", lineNb, distance);
 					}
 				}
@@ -515,7 +533,7 @@ function exportAsFCS(labels, nLabels, out, basename){
 
 		for(j=0; j<nLabels; j++){
 			for(k=0; k<nLabels; k++){
-				if(k>j) line+=","+getResult("Distance_"+labels[j*2+1]+"-"+labels[k*2+1]+"_microns");
+				if(k>j) line+=","+getResult("Distance_"+labels[j*2+1]+"-"+labels[k*2+1]+"_microns", i);
 			}
 		}
 		print(f, line);
